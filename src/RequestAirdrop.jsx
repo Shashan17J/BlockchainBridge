@@ -1,7 +1,7 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   WalletModalProvider,
   WalletDisconnectButton,
@@ -9,47 +9,71 @@ import {
 } from "@solana/wallet-adapter-react-ui";
 
 export function RequestAirdrop() {
+  const [balance, setBalance] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
   const wallet = useWallet();
   const { connection } = useConnection();
 
-  const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    if (wallet.publicKey) {
+      getBalance();
+    }
+  }, [wallet.publicKey]);
 
   async function requestAirdrop() {
-    let amount = document.getElementById("amount").value;
-    console.log("amount", amount);
-    await connection.requestAirdrop(
-      wallet.publicKey,
-      amount * LAMPORTS_PER_SOL
-    );
-    console.log(
-      "Airdropped " + amount + " SOL to " + wallet.publicKey.toBase58()
-    );
-    alert("Airdropped " + amount + " SOL to " + wallet.publicKey.toBase58());
+    if (wallet.connected) {
+      try {
+        let amount = document.getElementById("amount").value;
+        await connection.requestAirdrop(
+          wallet.publicKey,
+          amount * LAMPORTS_PER_SOL
+        );
+      } catch (error) {
+        console.log("Nhi hoa", error);
+      }
+      console.log(
+        "Airdropped " + amount + " SOL to " + wallet.publicKey.toBase58()
+      );
+      alert("Airdropped " + amount + " SOL to " + wallet.publicKey.toBase58());
+    } else {
+      alert("Please connect your wallet first");
+    }
+  }
+
+  async function getBalance() {
+    if (wallet.publicKey) {
+      try {
+        const balance = await connection.getBalance(wallet.publicKey);
+        setBalance(balance / LAMPORTS_PER_SOL);
+      } catch (error) {
+        console.error("Failed to fetch balance", error);
+        setError("Failed to fetch balance. Please try again later.");
+      }
+    }
   }
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 ">
+    <div className="flex flex-col justify-center items-center min-h-screen bg-[#10141f] to-blue-500 ">
       <div className=" flex mb-20 gap-10">
         <WalletMultiButton />
-        <WalletDisconnectButton />
+        {wallet.connected && <WalletDisconnectButton />}
       </div>
-      <div className="w-full max-w-md bg-white bg-opacity-20 backdrop-blur-lg rounded-3xl shadow-xl p-8">
+      <div className="w-full max-w-md bg-slate-900 backdrop-blur-lg rounded-3xl shadow-xl p-8">
         <h2 className="text-4xl font-bold mb-6 text-white text-center">
           Airdrop Tokens
         </h2>
-        <div className="mb-8 p-6 bg-white bg-opacity-30 rounded-2xl">
+        <div className="p-6 rounded-2xl">
           <h3 className="text-xl font-medium text-white mb-2">
             Wallet Balance
           </h3>
-          <p className="text-5xl font-bold text-white">
-            {"null"} <span className="text-2xl">tokens</span>
-          </p>
+          <p className="text-2xl font-bold text-white">{balance}</p>
         </div>
-        <form onSubmit={requestAirdrop} className="space-y-6">
+        <form onSubmit={requestAirdrop} className="space-y-6 rounded-2xl">
           <div>
             <label
               htmlFor="amount"
-              className="block text-lg font-medium text-white mb-2"
+              className="block text-xl font-medium text-white p-6 "
             >
               Airdrop Amount
             </label>
@@ -59,13 +83,13 @@ export function RequestAirdrop() {
               placeholder="Enter amount to airdrop"
               // onChange={(e) => setAmount(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:bg-opacity-30 transition"
+              className="w-80 px-4 py-3 mx-6 rounded-xl bg-white text-black placeholder-black focus:outline-none focus:ring-2 focus:ring-blue-900 transition"
             />
           </div>
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-4 border border-transparent rounded-xl text-lg font-medium text-purple-600 bg-white hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-80 mx-6 bg-blue-500 text-white rounded-lg py-3 px-4 font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? "Processing..." : "Airdrop Tokens"}
           </button>
