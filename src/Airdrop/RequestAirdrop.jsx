@@ -54,7 +54,7 @@ export function RequestAirdrop() {
   }
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-[#10141f] to-blue-500 ">
+    <div className="flex flex-col justify-center items-center min-h-screen bg-white to-blue-500 ">
       <div className=" flex mb-20 gap-10">
         <WalletMultiButton />
         {wallet.connected && <WalletDisconnectButton />}
